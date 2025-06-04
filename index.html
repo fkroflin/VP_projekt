@@ -61,38 +61,99 @@
     .freeze-button {
       cursor: pointer;
       transition: fill 0.2s;
+      fill: #3498db;
     }
     .freeze-button:hover {
-      fill: #2980b9; /* Darker shade of blue on hover */
+      fill: #2980b9;
     }
     .freeze-button:active {
-      fill: #1f6391; /* Even darker shade when pressed */
+      fill: #1f6391;
+    }
+    .random-button {
+      cursor: pointer;
+      transition: fill 0.2s;
+    }
+    .random-button:hover {
+      fill: #2980b9;
+    }
+    .random-button:active {
+      fill: #1f6391;
+    }
+    .reset-button {
+      cursor: pointer;
+      transition: fill 0.2s;
+    }
+    .reset-button:hover {
+      fill: #2980b9;
+    }
+    .reset-button:active {
+      fill: #1f6391;
+    }
+    .frozen-label {
+      fill: #ffd700;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .mega-glow {
+      filter: url(#megaGlow);
+    }
+    .mega-x-glow {
+      filter: url(#megaXGlow);
+    }
+    .mega-y-glow {
+      filter: url(#megaYGlow);
     }
   </style>
 </head>
 <body>
-  <svg id="pokedex" width="930" height="630"></svg>
+  <svg id="pokedex" width="930" height="630">
+    <defs>
+      <!-- White glow for regular Mega evolutions -->
+      <filter id="megaGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <!-- Blue glow for Mega X evolutions -->
+      <filter id="megaXGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feFlood flood-color="#00B7EB" result="color"/>
+        <feComposite in="color" in2="SourceAlpha" operator="in" result="coloredAlpha"/>
+        <feGaussianBlur in="coloredAlpha" stdDeviation="5" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+      <!-- Red glow for Mega Y evolutions -->
+      <filter id="megaYGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feFlood flood-color="#FF4040" result="color"/>
+        <feComposite in="color" in2="SourceAlpha" operator="in" result="coloredAlpha"/>
+        <feGaussianBlur in="coloredAlpha" stdDeviation="5" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+    </defs>
+  </svg>
   <script>
-    // Select the SVG element for the Pokédex
     const svg = d3.select("#pokedex");
-    
-    // Initialize variables for Pokémon navigation and state
-    let currentPokemonId = 1; // Start with the first Pokémon
-    let totalPokemon = 0; // Total number of Pokémon (to be determined from data)
-    let direction = "right"; // Direction of sprite animation (left or right)
-    let pokemonStats = {}; // Store Pokémon stats from the JSON file
-    let showingMega = false; // Flag for showing Mega form
-    let megaForms = []; // List of Mega forms for the current Pokémon
-    let megaIndex = 0; // Index for cycling through Mega forms
-    let currentLevel = 1; // Current level of the Pokémon
-    let frozenState = null; // Store frozen state: {id, level, points, showingMega, megaIndex}
-    let frozenColor = "rgba(255, 215, 0, 0.5)"; // Brighter gold for frozen stats
-    let defaultColor = "rgba(236, 240, 241, 0.3)"; // Default color for radar chart
+    let currentPokemonId = 1;
+    let totalPokemon = 0;
+    let direction = "right";
+    let pokemonStats = {};
+    let showingMega = false;
+    let megaForms = [];
+    let megaIndex = 0;
+    let currentLevel = 1;
+    let frozenState = null;
+    let frozenColor = "rgba(255, 215, 0, 0.5)";
+    let defaultColor = "rgba(236, 240, 241, 0.3)";
 
-    // Load Pokémon data and initialize display
     d3.json("filtered_pokemons.json").then(data => {
       pokemonStats = data;
-      // Count total Pokémon, excluding Mega forms
       totalPokemon = Object.keys(pokemonStats).filter(name => !name.startsWith("Mega")).length;
       if (totalPokemon > 0) {
         updatePokemon(currentPokemonId, false).then(() => {
@@ -105,7 +166,6 @@
       console.error("Failed to load Pokémon data: ", error);
     });
 
-    // Define a gradient for the Pokédex panels
     const defs = svg.append("defs");
     const gradient = defs.append("linearGradient")
       .attr("id", "panelGradient")
@@ -113,25 +173,20 @@
     gradient.append("stop").attr("offset", "0%").attr("stop-color", "#c0392b");
     gradient.append("stop").attr("offset", "100%").attr("stop-color", "#a5281a");
 
-    // Add a vertical separator between the left and right panels
     svg.append("rect")
       .attr("x", 450).attr("y", 0).attr("width", 30).attr("height", 630)
       .attr("fill", "#8e1e16").attr("rx", 8);
 
-    // Create the left panel group
     const left = svg.append("g").attr("id", "left-panel");
-    // Draw the left panel background
     left.append("rect")
       .attr("x", 15).attr("y", 15).attr("width", 450).attr("height", 600)
       .attr("fill", "url(#panelGradient)").attr("rx", 22)
       .attr("stroke", "#8e1e16").attr("stroke-width", 4);
 
-    // Add a blue circle (decorative element) on the left panel
     left.append("circle")
       .attr("cx", 75).attr("cy", 60).attr("r", 30).attr("fill", "#3498db")
       .attr("stroke", "#ecf0f1").attr("stroke-width", 4);
 
-    // Add three LED lights (red, green, yellow) on the left panel
     left.selectAll("circle.led")
       .data([0, 1, 2])
       .enter()
@@ -142,46 +197,37 @@
       .attr("fill", (d, i) => ["#e74c3c", "#2ecc71", "#f1c40f"][i])
       .attr("stroke", "#ecf0f1");
 
-    // Create the main screen group on the left panel
     const screen = left.append("g").attr("id", "main-screen");
 
-    // Define a clip path to mask the Pokémon sprite
     defs.append("clipPath").attr("id", "sprite-mask")
       .append("rect").attr("x", 75).attr("y", 105).attr("width", 330).attr("height", 270);
 
-    // Draw the screen background for the Pokémon display
     screen.append("rect")
       .attr("x", 75).attr("y", 105).attr("width", 330).attr("height", 270)
       .attr("fill", "#222").attr("rx", 15).attr("stroke", "#ecf0f1").attr("stroke-width", 3);
 
-    // Add the Pokémon name text
     const pokemonName = screen.append("text")
       .attr("id", "pokemon-name")
       .attr("x", 240).attr("y", 142)
       .attr("textLength", 300)
       .attr("lengthAdjust", "spacingAndGlyphs");
 
-    // Add the Pokémon sprite image
     const pokemonSprite = screen.append("image")
       .attr("id", "pokemon-sprite")
       .attr("clip-path", "url(#sprite-mask)")
       .attr("x", 165).attr("y", 157)
       .attr("width", 180).attr("height", 180);
 
-    // Create a group for Pokémon type icons
     const typeGroup = screen.append("g").attr("id", "type-group");
 
-    // Add the level indicator text
     const levelText = screen.append("text")
       .attr("x", 330)
       .attr("y", 352)
       .attr("class", "level-indicator")
       .text(`Lv.${currentLevel}`);
 
-    // Create the Mega button group
     const megaButton = left.append("g").attr("id", "mega-button");
 
-    // Draw the Mega button background
     megaButton.append("rect")
       .attr("x", 75).attr("y", 450).attr("width", 150).attr("height", 45)
       .attr("rx", 12)
@@ -189,7 +235,6 @@
       .attr("stroke", "#1b5e20")
       .attr("stroke-width", 3);
 
-    // Add the "MEGA" text to the button
     megaButton.append("text")
       .attr("x", 150).attr("y", 472)
       .attr("text-anchor", "middle")
@@ -199,131 +244,148 @@
       .attr("font-weight", "bold")
       .text("MEGA");
 
-    // Add click event to toggle Mega forms with disappear/reappear animation
     megaButton.style("cursor", "pointer")
       .on("click", () => {
-        if (!megaForms.length) return; // Do nothing if no Mega forms exist
+        if (!megaForms.length) return;
         showingMega = true;
-        megaIndex = (megaIndex + 1) % (megaForms.length + 1); // Cycle through Mega forms
-        if (megaIndex === 0) showingMega = false; // Reset to base form
-        updatePokemon(currentPokemonId, true); // Update the display with sprite animation
+        megaIndex = (megaIndex + 1) % (megaForms.length + 1);
+        if (megaIndex === 0) showingMega = false;
+        updatePokemon(currentPokemonId, true);
       });
 
-    // Create the D-pad for navigation and level adjustment
     const dpad = left.append("g").attr("transform", "translate(345, 465)");
     const armLength = 30, armThickness = 21, centerSize = 24;
 
-    // D-pad up button (increase level)
     dpad.append("rect")
       .attr("x", -armThickness / 2).attr("y", -armLength - centerSize / 2)
       .attr("width", armThickness).attr("height", armLength)
       .attr("fill", "#2c3e50").attr("class", "dpad-button")
       .on("click", () => adjustLevel(10));
 
-    // D-pad down button (decrease level)
     dpad.append("rect")
       .attr("x", -armThickness / 2).attr("y", centerSize / 2)
       .attr("width", armThickness).attr("height", armLength)
       .attr("fill", "#2c3e50").attr("class", "dpad-button")
       .on("click", () => adjustLevel(-10));
 
-    // D-pad left button (previous Pokémon)
     dpad.append("rect")
       .attr("x", -armLength - centerSize / 2).attr("y", -armThickness / 2)
       .attr("width", armLength).attr("height", armThickness)
       .attr("fill", "#2c3e50").attr("class", "dpad-button")
       .on("click", () => { direction = "left"; scrollLeft(); });
 
-    // D-pad right button (next Pokémon)
     dpad.append("rect")
       .attr("x", centerSize / 2).attr("y", -armThickness / 2)
       .attr("width", armLength).attr("height", armThickness)
       .attr("fill", "#2c3e50").attr("class", "dpad-button")
       .on("click", () => { direction = "right"; scrollRight(); });
 
-    // D-pad center
     dpad.append("rect")
       .attr("x", -centerSize / 2).attr("y", -centerSize / 2)
       .attr("width", centerSize).attr("height", centerSize)
       .attr("fill", "#34495e");
 
-    // Create the right panel group
     const right = svg.append("g").attr("id", "right-panel");
-    // Draw the right panel background
     right.append("rect")
       .attr("x", 465).attr("y", 15).attr("width", 450).attr("height", 600)
       .attr("fill", "url(#panelGradient)").attr("rx", 22)
       .attr("stroke", "#8e1e16").attr("stroke-width", 4);
 
-    // Draw the radar chart screen background
     right.append("rect")
       .attr("x", 510).attr("y", 60).attr("width", 360).attr("height", 370)
       .attr("fill", "#222").attr("rx", 15).attr("stroke", "#ecf0f1").attr("stroke-width", 3);
 
-    // Create the radar chart group
-    const radarChart = right.append("g")
+    const chartGroup = right.append("g")
       .attr("transform", "translate(690, 250) scale(1)");
 
-    const radarWidth = 300;
-    const radarHeight = 300;
-    const radius = Math.min(radarWidth, radarHeight) / 2;
-    const angleSlice = (Math.PI * 2) / 6; // Divide the circle into 6 segments (for 6 stats)
+    const chartWidth = 300;
+    const chartHeight = 300;
+    const radius = Math.min(chartWidth, chartHeight) / 2;
+    const angleSlice = (Math.PI * 2) / 6;
 
-    // Create the axes for the radar chart (HP, ATK, DEF, SPA, SPD, SPE)
-    const axes = radarChart.selectAll(".axis")
-      .data(["HP", "ATK", "DEF", "SPA", "SPD", "SPE"])
-      .enter()
-      .append("g")
-      .attr("class", "axis");
+    function drawRadarChart(stats, maxStat) {
+      chartGroup.selectAll("*").remove();
 
-    // Draw the axis lines
-    axes.append("line")
-      .attr("x1", 0)
-      .attr("y1", 0)
-      .attr("x2", (d, i) => radius * Math.cos(angleSlice * i - Math.PI / 2))
-      .attr("y2", (d, i) => radius * Math.sin(angleSlice * i - Math.PI / 2))
-      .attr("class", "radar-chart");
+      const radarData = stats.map(stat => (stat / maxStat) * radius);
 
-    // Add labels to the axes
-    axes.append("text")
-      .attr("x", (d, i) => (radius + 15) * Math.cos(angleSlice * i - Math.PI / 2))
-      .attr("y", (d, i) => (radius + 15) * Math.sin(angleSlice * i - Math.PI / 2))
-      .attr("text-anchor", "middle")
-      .attr("fill", "#ecf0f1")
-      .attr("font-size", "15px")
-      .text(d => d);
+      const axes = chartGroup.selectAll(".axis")
+        .data(["HP", "ATK", "DEF", "SPA", "SPD", "SPE"])
+        .enter()
+        .append("g")
+        .attr("class", "axis");
 
-    // Draw concentric polygons for the radar chart levels
-    const levels = 5;
-    for (let i = 0; i < levels; i++) {
-      const levelFactor = radius * (i + 1) / levels;
-      radarChart.append("polygon")
-        .attr("points", Array.from({length: 6}, (_, j) => {
-          const angle = angleSlice * j - Math.PI / 2;
-          return `${levelFactor * Math.cos(angle)},${levelFactor * Math.sin(angle)}`;
+      axes.append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", (d, i) => radius * Math.cos(angleSlice * i - Math.PI / 2))
+        .attr("y2", (d, i) => radius * Math.sin(angleSlice * i - Math.PI / 2))
+        .attr("class", "radar-chart");
+
+      axes.append("text")
+        .attr("x", (d, i) => (radius + 15) * Math.cos(angleSlice * i - Math.PI / 2))
+        .attr("y", (d, i) => (radius + 15) * Math.sin(angleSlice * i - Math.PI / 2))
+        .attr("text-anchor", "middle")
+        .attr("fill", "#ecf0f1")
+        .attr("font-size", "15px")
+        .text(d => d);
+
+      const levels = 5;
+      for (let i = 0; i < levels; i++) {
+        const levelFactor = radius * (i + 1) / levels;
+        chartGroup.append("polygon")
+          .attr("points", Array.from({length: 6}, (_, j) => {
+            const angle = angleSlice * j - Math.PI / 2;
+            return `${levelFactor * Math.cos(angle)},${levelFactor * Math.sin(angle)}`;
+          }).join(" "))
+          .attr("class", "radar-chart")
+          .attr("fill", "none")
+          .attr("stroke", "#ecf0f1")
+          .attr("stroke-width", 1);
+      }
+
+      const radarPolygon = chartGroup.append("polygon")
+        .attr("class", "radar-area")
+        .attr("data-type", "current")
+        .attr("points", radarData.map((value, i) => {
+          const x = value * Math.cos(angleSlice * i - Math.PI / 2);
+          const y = value * Math.sin(angleSlice * i - Math.PI / 2);
+          return `${x},${y}`;
         }).join(" "))
-        .attr("class", "radar-chart")
-        .attr("fill", "none")
         .attr("stroke", "#ecf0f1")
-        .attr("stroke-width", 1);
+        .attr("stroke-width", 3);
+
+      const isFrozen = frozenState &&
+                      frozenState.id === currentPokemonId &&
+                      frozenState.level === currentLevel &&
+                      frozenState.showingMega === showingMega &&
+                      frozenState.megaIndex === megaIndex;
+      radarPolygon.attr("fill", isFrozen ? frozenColor : defaultColor);
+
+      if (frozenState && !isFrozen) {
+        chartGroup.append("polygon")
+          .attr("class", "radar-area")
+          .attr("data-type", "frozen")
+          .attr("points", frozenState.points)
+          .attr("fill", frozenColor)
+          .attr("stroke", "#d4af37")
+          .attr("stroke-width", 3);
+      }
     }
 
-    // Create the stat display screen
     const statScreen = right.append("g").attr("id", "stat-screen");
-    // Draw the stat screen background
     statScreen.append("rect")
       .attr("x", 510).attr("y", 450).attr("width", 360).attr("height", 75)
       .attr("fill", "#222").attr("rx", 8).attr("stroke", "#ecf0f1").attr("stroke-width", 3);
 
-    // Create a grid for the blue buttons
+    const frozenLabelGroup = right.append("g").attr("id", "frozen-label-group");
+
     const btnGrid = right.append("g").attr("transform", "translate(510, 540)");
     const buttonData = [
-      { label: "FREEZE", class: "freeze-button" }, // First button is the freeze button
-      { label: "", class: "blue-btn" },
-      { label: "", class: "blue-btn" }
+      { label: "FREEZE", class: "freeze-button" },
+      { label: "RANDOM", class: "random-button" },
+      { label: "RESET", class: "reset-button" }
     ];
 
-    // Draw the blue buttons
     const buttons = btnGrid.selectAll("g.button")
       .data(buttonData)
       .enter()
@@ -331,7 +393,6 @@
       .attr("class", "button")
       .attr("transform", (d, i) => `translate(${(i % 3) * 90}, ${Math.floor(i / 3) * 60})`);
 
-    // Add the button rectangles
     buttons.append("rect")
       .attr("x", 0)
       .attr("y", 0)
@@ -340,19 +401,16 @@
       .attr("stroke", "#2980b9").attr("stroke-width", 3)
       .attr("class", d => d.class);
 
-    // Add the "FREEZE" label to the first button
-    buttons.filter(d => d.label === "FREEZE")
-      .append("text")
+    buttons.append("text")
       .attr("x", 37)
       .attr("y", 23)
       .attr("text-anchor", "middle")
       .attr("alignment-baseline", "middle")
       .attr("fill", "#ecf0f1")
-      .attr("font-size", "14px")
+      .attr("font-size", "12px")
       .attr("font-weight", "bold")
-      .text("FREEZE");
+      .text(d => d.label);
 
-    // Add click event to the freeze button
     btnGrid.select(".freeze-button")
       .on("click", () => {
         const radarArea = d3.select(".radar-area").filter(function() {
@@ -362,67 +420,92 @@
           const currentPoints = radarArea.attr("points");
 
           if (!frozenState) {
-            // Freeze the current Pokémon's stats
             frozenState = {
               id: currentPokemonId,
               level: currentLevel,
               points: currentPoints,
               showingMega: showingMega,
-              megaIndex: megaIndex
+              megaIndex: megaIndex,
+              name: pokemonName.text()
             };
             console.log("Freezing stats:", frozenState);
-            updatePokemon(currentPokemonId, false); // Refresh to apply frozen color
+            updatePokemon(currentPokemonId, false);
           } else {
-            // Check if the current Pokémon and level match the frozen state
             const isSame = frozenState.id === currentPokemonId &&
                           frozenState.level === currentLevel &&
                           frozenState.showingMega === showingMega &&
                           frozenState.megaIndex === megaIndex;
 
             if (isSame) {
-              // Unfreeze if clicking on the same Pokémon and level
               console.log("Unfreezing stats");
               frozenState = null;
-              updatePokemon(currentPokemonId, false); // Refresh to apply default color
+              updatePokemon(currentPokemonId, false);
             } else {
-              // Swap the frozen stats with the current stats
               const newPoints = radarArea.attr("points");
               console.log("Swapping frozen stats:", frozenState, "with new points:", newPoints);
-              // Remove any existing frozen radar area
               d3.selectAll(".radar-area").filter(function() {
                 return d3.select(this).attr("data-type") === "frozen";
               }).remove();
-              // Add the new frozen radar area
-              radarChart.append("polygon")
+              chartGroup.append("polygon")
                 .attr("class", "radar-area")
                 .attr("data-type", "frozen")
                 .attr("points", frozenState.points)
                 .attr("fill", frozenColor)
-                .attr("stroke", "#ecf0f1")
+                .attr("stroke", "#d4af37")
                 .attr("stroke-width", 3);
-              // Update the frozen state
               frozenState = {
                 id: currentPokemonId,
                 level: currentLevel,
                 points: newPoints,
                 showingMega: showingMega,
-                megaIndex: megaIndex
+                megaIndex: megaIndex,
+                name: pokemonName.text()
               };
-              updatePokemon(currentPokemonId, false); // Refresh to apply frozen color
+              updatePokemon(currentPokemonId, false);
             }
+          }
+
+          frozenLabelGroup.selectAll("*").remove();
+          if (frozenState) {
+            const frozenLabel = frozenLabelGroup.append("text")
+              .attr("x", 520)
+              .attr("y", 400)
+              .attr("class", "frozen-label");
+            frozenLabel.append("tspan").text(frozenState.name);
+            frozenLabel.append("tspan").attr("x", 520).attr("dy", "1.2em").text(`Lv. ${frozenState.level}`);
           }
         } else {
           console.error("No current radar area found to freeze.");
         }
       });
 
-    // Parse EV Yield string into value and stat
+    btnGrid.select(".random-button")
+      .on("click", () => {
+        currentPokemonId = Math.floor(Math.random() * totalPokemon) + 1;
+        currentLevel = Math.floor(Math.random() * 100) + 1;
+        showingMega = false;
+        megaIndex = 0;
+        frozenState = null;
+        frozenLabelGroup.selectAll("*").remove();
+        updatePokemon(currentPokemonId, true);
+      });
+
+    btnGrid.select(".reset-button")
+      .on("click", () => {
+        currentPokemonId = 1; // Reset to starting Pokémon (ID 1)
+        currentLevel = 1;
+        showingMega = false;
+        megaIndex = 0;
+        frozenState = null;
+        frozenLabelGroup.selectAll("*").remove();
+        updatePokemon(currentPokemonId, true);
+      });
+
     function parseEVYield(evYield) {
       const [value, stat] = evYield.split(" ");
       return { stat: stat, value: parseInt(value) };
     }
 
-    // Calculate a stat based on base value, level, and EV yield
     function calculateStat(base, level, statName, evYield) {
       let EV = 0;
       const evData = evYield ? parseEVYield(evYield) : null;
@@ -437,31 +520,27 @@
       };
 
       if (evData && statMap[statName] === evData.stat) {
-        EV = evData.value; // Apply EV if the stat matches
+        EV = evData.value;
       }
 
       return Math.floor((base * 2 + Math.floor(EV / 4)) * level / 100) + level + 10;
     }
 
-    // Adjust the Pokémon's level (up or down) without animation
     function adjustLevel(change) {
-      currentLevel = Math.min(100, Math.max(1, currentLevel + change)); // Clamp level between 1 and 100
+      currentLevel = Math.min(100, Math.max(1, currentLevel + change));
       levelText.text(`Lv.${currentLevel}`);
-      updatePokemon(currentPokemonId, false); // Update without sprite animation
+      updatePokemon(currentPokemonId, false);
     }
 
-    // Update the Pokédex display with the specified Pokémon
     async function updatePokemon(id, updateSprite) {
       try {
         const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}/`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         const baseName = data.name.charAt(0).toUpperCase() + data.name.slice(1);
-        // Find all Mega forms for the current Pokémon
         const allForms = Object.keys(pokemonStats).filter(k => k.startsWith(`Mega ${baseName}`));
         megaForms = allForms;
 
-        // Determine which form to display (base or Mega)
         let displayName = showingMega && megaForms.length ? megaForms[megaIndex - 1] : baseName;
         const localData = pokemonStats[displayName];
         if (!localData || !localData.Type) {
@@ -469,29 +548,50 @@
           return;
         }
 
-        // Update the Pokémon name
         pokemonName.text(displayName.toUpperCase());
-        // Highlight the Mega button if Mega forms exist
         megaButton.select("rect")
           .transition().duration(300)
           .attr("fill", megaForms.length > 0 ? "#4caf50" : "#2e7d32");
 
-        // Update the sprite with disappear/reappear animation if requested
         if (updateSprite) {
           pokemonSprite.transition().duration(300)
             .attr("opacity", 0)
             .on("end", () => {
+              const isMega = showingMega && megaForms.length > 0;
+              let glowClass = null;
+              if (isMega) {
+                if (displayName.endsWith(" X")) {
+                  glowClass = "mega-x-glow"; // Blue glow for Mega X
+                } else if (displayName.endsWith(" Y")) {
+                  glowClass = "mega-y-glow"; // Red glow for Mega Y
+                } else {
+                  glowClass = "mega-glow"; // White glow for regular Mega
+                }
+              }
               pokemonSprite
                 .attr("href", data.sprites.front_default)
-                .attr("x", 165) // Fixed position, no directional shift
+                .attr("class", glowClass)
+                .attr("x", 165)
                 .transition().duration(300)
                 .attr("opacity", 1);
             });
         } else {
-          pokemonSprite.attr("href", data.sprites.front_default);
+          const isMega = showingMega && megaForms.length > 0;
+          let glowClass = null;
+          if (isMega) {
+            if (displayName.endsWith(" X")) {
+              glowClass = "mega-x-glow"; // Blue glow for Mega X
+            } else if (displayName.endsWith(" Y")) {
+              glowClass = "mega-y-glow"; // Red glow for Mega Y
+            } else {
+              glowClass = "mega-glow"; // White glow for regular Mega
+            }
+          }
+          pokemonSprite
+            .attr("href", data.sprites.front_default)
+            .attr("class", glowClass);
         }
 
-        // Update the type icons
         const types = localData.Type.split(',').map(t => t.toLowerCase().trim());
         const iconSize = 36, padding = 9, baseX = 91, baseY = 322;
 
@@ -507,7 +607,6 @@
           .attr("width", iconSize)
           .attr("height", iconSize);
 
-        // Calculate the Pokémon's stats based on the current level
         const stats = [
           calculateStat(localData["HP Base"], currentLevel, "HP", localData["EV Yield"]),
           calculateStat(localData["Attack Base"], currentLevel, "ATK", localData["EV Yield"]),
@@ -517,44 +616,9 @@
           calculateStat(localData["Speed Base"], currentLevel, "SPE", localData["EV Yield"])
         ];
 
-        const maxStat = 450; // Maximum stat value for scaling the radar chart
-        const radarData = stats.map(stat => (stat / maxStat) * radius);
+        const maxStat = 450;
+        drawRadarChart(stats, maxStat);
 
-        // Update the radar chart
-        radarChart.selectAll(".radar-area").remove();
-        const radarPolygon = radarChart.append("polygon")
-          .attr("class", "radar-area")
-          .attr("data-type", "current")
-          .attr("points", radarData.map((value, i) => {
-            const x = value * Math.cos(angleSlice * i - Math.PI / 2);
-            const y = value * Math.sin(angleSlice * i - Math.PI / 2);
-            return `${x},${y}`;
-          }).join(" "))
-          .attr("stroke", "#ecf0f1")
-          .attr("stroke-width", 3);
-
-        // Apply the correct fill color based on frozen state
-        const isFrozen = frozenState &&
-                        frozenState.id === currentPokemonId &&
-                        frozenState.level === currentLevel &&
-                        frozenState.showingMega === showingMega &&
-                        frozenState.megaIndex === megaIndex;
-        radarPolygon.attr("fill", isFrozen ? frozenColor : defaultColor);
-        console.log(`Setting current radar fill to ${isFrozen ? frozenColor : defaultColor}`);
-
-        // Add the frozen radar area if it exists and differs
-        if (frozenState && !isFrozen) {
-          radarChart.append("polygon")
-            .attr("class", "radar-area")
-            .attr("data-type", "frozen")
-            .attr("points", frozenState.points)
-            .attr("fill", frozenColor)
-            .attr("stroke", "#ecf0f1")
-            .attr("stroke-width", 3);
-          console.log("Added frozen radar area with fill:", frozenColor);
-        }
-
-        // Update the stat display
         const statsDisplay = [
           `HP: ${stats[0]}`,
           `ATK: ${stats[1]}`,
@@ -578,26 +642,23 @@
         levelText.text(`Lv.${currentLevel}`);
       } catch (error) {
         console.error(`Error updating Pokémon ${id}:`, error);
-        // Do not automatically scroll right; log and halt
       }
     }
 
-    // Scroll to the next Pokémon
     function scrollRight() {
       currentPokemonId = currentPokemonId % totalPokemon + 1;
       showingMega = false;
       megaIndex = 0;
       currentLevel = 1;
-      updatePokemon(currentPokemonId, true); // Update with sprite animation
+      updatePokemon(currentPokemonId, true);
     }
 
-    // Scroll to the previous Pokémon
     function scrollLeft() {
       currentPokemonId = (currentPokemonId - 2 + totalPokemon) % totalPokemon + 1;
       showingMega = false;
       megaIndex = 0;
       currentLevel = 1;
-      updatePokemon(currentPokemonId, true); // Update with sprite animation
+      updatePokemon(currentPokemonId, true);
     }
   </script>
 </body>
