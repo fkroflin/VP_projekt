@@ -108,7 +108,6 @@
 <body>
   <svg id="pokedex" width="930" height="630">
     <defs>
-      <!-- White glow for regular Mega evolutions -->
       <filter id="megaGlow" x="-50%" y="-50%" width="200%" height="200%">
         <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
         <feMerge>
@@ -116,7 +115,6 @@
           <feMergeNode in="SourceGraphic"/>
         </feMerge>
       </filter>
-      <!-- Blue glow for Mega X evolutions -->
       <filter id="megaXGlow" x="-50%" y="-50%" width="200%" height="200%">
         <feFlood flood-color="#00B7EB" result="color"/>
         <feComposite in="color" in2="SourceAlpha" operator="in" result="coloredAlpha"/>
@@ -126,7 +124,6 @@
           <feMergeNode in="SourceGraphic"/>
         </feMerge>
       </filter>
-      <!-- Red glow for Mega Y evolutions -->
       <filter id="megaYGlow" x="-50%" y="-50%" width="200%" height="200%">
         <feFlood flood-color="#FF4040" result="color"/>
         <feComposite in="color" in2="SourceAlpha" operator="in" result="coloredAlpha"/>
@@ -492,7 +489,7 @@
 
     btnGrid.select(".reset-button")
       .on("click", () => {
-        currentPokemonId = 1; // Reset to starting Pokémon (ID 1)
+        currentPokemonId = 1;
         currentLevel = 1;
         showingMega = false;
         megaIndex = 0;
@@ -561,11 +558,11 @@
               let glowClass = null;
               if (isMega) {
                 if (displayName.endsWith(" X")) {
-                  glowClass = "mega-x-glow"; // Blue glow for Mega X
+                  glowClass = "mega-x-glow";
                 } else if (displayName.endsWith(" Y")) {
-                  glowClass = "mega-y-glow"; // Red glow for Mega Y
+                  glowClass = "mega-y-glow"; 
                 } else {
-                  glowClass = "mega-glow"; // White glow for regular Mega
+                  glowClass = "mega-glow"; 
                 }
               }
               pokemonSprite
